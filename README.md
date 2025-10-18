@@ -1,50 +1,61 @@
-# Welcome to your Expo app 👋
+# Luminary Landing (Expo)
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A small Expo + React Native project demonstrating a landing page driven by Kontent.ai (headless CMS). The app includes light/dark theming, a hero header, and a list of feature cards populated from the CMS.
 
-## Get started
+## Quick start
 
 1. Install dependencies
-
    ```bash
    npm install
    ```
-
 2. Start the app
-
    ```bash
    npx expo start
    ```
 
-In the output, you'll find options to open the app in a
+Open on device/simulator or web via the Expo devtools.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Project structure (important files)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- App entry: [App.js](App.js)
+- Main landing page (example implementation): [views/landing-screen.js](views/landing-screen.js)
+- Expo Router tabs: [app/(tabs)/index.tsx](app/(tabs)/index.tsx)
+- Kontent.ai fetcher: [`fetchLandingData`](service/api-service.js) — see [service/api-service.js](service/api-service.js)
+- UI pieces:
+  - Hero header: [components/header-hero.js](components/header-hero.js)
+  - Feature card: [components/feature.js](components/feature.js)
+  - Themed helpers: [components/themed-view.tsx](components/themed-view.tsx) and [components/themed-text.tsx](components/themed-text.tsx)
+- Theme colors: [constants/theme.ts](constants/theme.ts)
+- Color scheme hook: [hooks/use-color-scheme.ts](hooks/use-color-scheme.ts)
 
-## Get a fresh project
+## How the landing page works
 
-When you're ready, run:
+- The landing content is fetched from Kontent.ai using the delivery endpoint defined in [service/api-service.js](service/api-service.js) via the [`fetchLandingData`](service/api-service.js) function.
+- Landing components parse the delivery response and map modular content to cards:
+  - Hero data -> [components/header-hero.js](components/header-hero.js)
+  - Linked feature items -> [components/feature.js](components/feature.js)
 
-```bash
-npm run reset-project
-```
+See [views/landing-screen.js](views/landing-screen.js) and [app/(tabs)/index.tsx](app/(tabs)/index.tsx) for two example implementations of the landing screen.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Development notes
 
-## Learn more
+- TypeScript config: [tsconfig.json](tsconfig.json)
+- To reset this starter project (moves existing code to `app-example` and creates a blank `app`), run:
+  ```bash
+  npm run reset-project
+  ```
+  See [scripts/reset-project.js](scripts/reset-project.js).
 
-To learn more about developing your project with Expo, look at the following resources:
+## Styling & theming
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Colors and fonts are defined in [constants/theme.ts](constants/theme.ts).
+- Use `ThemedView` and `ThemedText` components to respect light/dark themes: [components/themed-view.tsx](components/themed-view.tsx), [components/themed-text.tsx](components/themed-text.tsx).
 
-## Join the community
+## Extending / customizing
 
-Join our community of developers creating universal apps.
+- To change the Kontent.ai endpoint or item codenames, edit the API constant in [service/api-service.js](service/api-service.js).
+- Add or modify content mappers in [views/landing-screen.js](views/landing-screen.js) or [app/(tabs)/index.tsx](app/(tabs)/index.tsx) depending on which file you use as the landing implementation.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## License
+
+Private project.
