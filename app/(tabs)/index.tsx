@@ -1,98 +1,120 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import Feature from "@/components/feature";
+import HeaderHero from "@/components/header-hero";
+import { ThemedText } from "@/components/themed-text";
+import { ThemedView } from "@/components/themed-view";
+import { Colors } from "@/constants/theme";
+import { useColorScheme } from "@/hooks/use-color-scheme";
+import { fetchLandingData } from "@/service/api-service";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  SafeAreaView,
+  StyleSheet
+} from "react-native";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+type FeatureItem = {
+    id: string;
+    title: string;
+    description: string;
+    icon: string | null;
+};
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    const [title, setTitle] = useState<string>("");
+    const [bannerImage, setBannerImage] = useState<string | null>(null);
+    const [features, setFeatures] = useState<FeatureItem[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string | null>(null);
+    const colorScheme = useColorScheme() ?? "light";
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
-  );
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const json = await fetchLandingData();
+                const item = json?.item;
+                const modules = json?.modular_content || {};
+
+                const pageTitle = item?.elements?.title_page?.value || "Welcome";
+                const heroImg = item?.elements?.banner_image?.value?.[0]?.url || null;
+                const linkedItems = item?.elements?.untitled_linked_items?.value || [];
+
+                const mappedFeatures: FeatureItem[] = linkedItems
+                    .map((key: string) => {
+                        const content = modules[key];
+                        if (!content) return null;
+                        return {
+                            id: key,
+                            title: content?.elements?.title?.value || "",
+                            description: content?.elements?.description?.value || "",
+                            icon: content?.elements?.icon?.value?.[0]?.url || null,
+                        } as FeatureItem;
+                    })
+                    .filter(Boolean) as FeatureItem[];
+
+                setTitle(pageTitle);
+                setBannerImage(heroImg);
+                setFeatures(mappedFeatures);
+            } catch (e) {
+                console.error(e);
+                setError("Failed to load content");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadData();
+    }, []);
+
+    const renderItem = useCallback(({ item }: { item: FeatureItem }) => {
+        return (
+            <Feature
+                title={item.title}
+                description={item.description}
+                icon={item.icon}
+            />
+        );
+    }, []);
+
+    if (loading) {
+        return (
+            <ThemedView style={styles.center}>
+                <ActivityIndicator size="large" color={Colors[colorScheme].tint} />
+            </ThemedView>
+        );
+    }
+
+    if (error) {
+        return (
+            <ThemedView style={styles.center}>
+                <ThemedText>{error}</ThemedText>
+            </ThemedView>
+        );
+    }
+
+    return (
+        <ThemedView style={{ flex: 1 }}>
+            <SafeAreaView style={styles.container}>
+                <FlatList
+                    data={features}
+                    keyExtractor={(item) => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.list}
+                    ListHeaderComponent={<HeaderHero title={title} image={bannerImage} />}
+                    ListEmptyComponent={<ThemedText>No features available.</ThemedText>}
+                />
+            </SafeAreaView>
+        </ThemedView>
+    );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+    container: { flex: 1 },
+    list: { padding: 16 },
+    center: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        marginTop: 100,
+    },
 });
